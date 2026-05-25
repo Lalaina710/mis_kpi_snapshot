@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 SOPROMER
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<odoo>
+
+    <!-- Parent submenu under MIS Reporting -->
+    <menuitem id="menu_mis_kpi_snapshot_root"
+              name="KPI Snapshots"
+              parent="mis_builder.mis_report_conf_menu"
+              sequence="50"/>
+
+    <menuitem id="menu_mis_kpi_snapshot_list"
+              name="Snapshots"
+              parent="menu_mis_kpi_snapshot_root"
+              action="action_mis_kpi_snapshot"
+              sequence="10"/>
+
+    <menuitem id="menu_mis_kpi_snapshot_wizard"
+              name="Snapshot All Instances"
+              parent="menu_mis_kpi_snapshot_root"
+              action="action_mis_kpi_snapshot_all_wizard"
+              sequence="20"/>
+
+</odoo>

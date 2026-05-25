@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mis_kpi_snapshot_user,mis.kpi.snapshot user (read),model_mis_kpi_snapshot,account.group_account_invoice,1,0,0,0
+access_mis_kpi_snapshot_manager,mis.kpi.snapshot manager (full),model_mis_kpi_snapshot,account.group_account_manager,1,1,1,1
+access_mis_kpi_snapshot_admin,mis.kpi.snapshot admin (full),model_mis_kpi_snapshot,base.group_system,1,1,1,1
+access_mis_kpi_snapshot_wiz_user,mis.kpi.snapshot wizard user,model_mis_kpi_snapshot_all_wizard,account.group_account_invoice,1,1,1,1
+access_mis_kpi_snapshot_wiz_manager,mis.kpi.snapshot wizard manager,model_mis_kpi_snapshot_all_wizard,account.group_account_manager,1,1,1,1
+access_mis_kpi_snapshot_wiz_admin,mis.kpi.snapshot wizard admin,model_mis_kpi_snapshot_all_wizard,base.group_system,1,1,1,1

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*~
+.DS_Store
+*.egg-info/
+.idea/
+.vscode/
+*.tmp
+.git_commit_msg.tmp

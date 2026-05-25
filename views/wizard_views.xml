@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 SOPROMER
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<odoo>
+
+    <record id="view_mis_kpi_snapshot_all_wizard_form" model="ir.ui.view">
+        <field name="name">mis.kpi.snapshot.all.wizard.form</field>
+        <field name="model">mis.kpi.snapshot.all.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Snapshot All Instances">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Either pick specific instances OR filter by company / report template.
+                        Leaving everything blank snapshots every configured instance you have access to.
+                    </div>
+                    <group>
+                        <group string="Specific Instances (optional)">
+                            <field name="instance_ids"
+                                   widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                        </group>
+                        <group string="Filters">
+                            <field name="company_ids"
+                                   widget="many2many_tags"
+                                   groups="base.group_multi_company"/>
+                            <field name="report_ids"
+                                   widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_run"
+                            type="object"
+                            string="Run Snapshot"
+                            class="btn-primary"/>
+                    <button special="cancel"
+                            string="Cancel"
+                            class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_mis_kpi_snapshot_all_wizard" model="ir.actions.act_window">
+        <field name="name">Snapshot All Instances</field>
+        <field name="res_model">mis.kpi.snapshot.all.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

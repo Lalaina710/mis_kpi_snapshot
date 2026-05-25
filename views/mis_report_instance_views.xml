@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2026 SOPROMER
+     License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl). -->
+<odoo>
+
+    <record id="view_mis_report_instance_form_snapshot" model="ir.ui.view">
+        <field name="name">mis.report.instance.form.snapshot</field>
+        <field name="model">mis.report.instance</field>
+        <field name="inherit_id" ref="mis_builder.mis_report_instance_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Add a Snapshot Now button next to Compute / Preview header buttons -->
+            <xpath expr="//header" position="inside">
+                <button name="action_snapshot_now"
+                        type="object"
+                        string="Snapshot Now"
+                        class="btn-secondary"
+                        groups="account.group_account_invoice"
+                        help="Compute this instance and persist every KPI value to the snapshot table."/>
+            </xpath>
+
+            <!-- Smart button: snapshot count -->
+            <xpath expr="//sheet" position="inside">
+                <div class="oe_button_box" name="snapshot_button_box">
+                    <button name="action_view_snapshots"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-database"
+                            groups="account.group_account_invoice">
+                        <field name="snapshot_count" widget="statinfo" string="Snapshots"/>
+                    </button>
+                </div>
+                <group string="Snapshot Status" groups="account.group_account_invoice">
+                    <field name="last_snapshot_at" readonly="1"/>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>
