@@ -144,35 +144,12 @@ class MisKpiSnapshot(models.Model):
     # Business logic — snapshotting
     # ------------------------------------------------------------------------
     @api.model
-    def _extract_period_header_labels(self, result):
-        """Extract column labels from the mis_builder result header.
-
-        ``result['header']`` is a list of header rows; the labels of the
-        periods (columns) typically live in the last header row's ``cols``.
-        Returns a list of strings, one per data column.
-        """
-        header = result.get("header") or []
-        if not header:
-            return []
-        # The last header row contains the most specific labels (period names)
-        last_row = header[-1] if isinstance(header[-1], dict) else {}
-        cols = last_row.get("cols") or []
-        labels = []
-        for col in cols:
-            if isinstance(col, dict):
-                labels.append(col.get("label") or col.get("name") or "")
-            else:
-                labels.append(str(col))
-        return labels
-
-    @api.model
     def _coerce_value(self, raw_val):
-        """Coerce mis_builder value (possibly AccountingNone) to float."""
+        """Coerce mis_builder value (possibly AccountingNone/None) to float."""
         if raw_val is None:
             return 0.0
         if isinstance(raw_val, (int, float)):
             return float(raw_val)
-        # AccountingNone, str, etc.
         try:
             return float(raw_val)
         except (TypeError, ValueError):
@@ -184,6 +161,13 @@ class MisKpiSnapshot(models.Model):
 
         History-preserving: never deletes prior snapshots, every call appends
         rows tagged with the current ``computed_at`` timestamp.
+
+        Compatible with mis_builder v18.0.1.8.1 result structure:
+        - result['body']: list of rows, each with 'label', 'style', 'cells'
+        - result['header'][0]['cols']: list of period column descriptors
+        - cell['cell_id']: '<kpi_id>##<period_id>#' format
+        - cell['val']: numeric value (float or None)
+        - cell['val_r']: formatted value string
 
         Returns the number of records created.
         """
@@ -209,69 +193,91 @@ class MisKpiSnapshot(models.Model):
             )
             return 0
 
-        # Build a lookup of periods by their display name for mapping cols→period
-        periods_by_name = {p.name: p for p in instance.period_ids}
+        body = result.get("body") or []
+        if not body:
+            _logger.info(
+                "MIS snapshot: instance %s returned empty body, skipping.",
+                instance.name,
+            )
+            return 0
+
+        # Build period lookup by id and by ordered position
+        periods_by_id = {p.id: p for p in instance.period_ids}
         ordered_periods = list(instance.period_ids)
-        period_labels = self._extract_period_header_labels(result)
+
+        # Build KPI lookup by id for technical name resolution
+        kpi_by_id = {}
+        if instance.report_id:
+            for kpi in instance.report_id.kpi_ids:
+                kpi_by_id[kpi.id] = kpi
 
         now = fields.Datetime.now()
         company = instance.company_id or self.env.company
         records_to_create = []
 
-        for row in result.get("content") or []:
+        for seq_idx, row in enumerate(body):
             if not isinstance(row, dict):
                 continue
 
-            kpi_name = row.get("kpi_name") or row.get("row_id") or ""
-            kpi_description = row.get("description") or ""
-            kpi_sequence_raw = row.get("row_id") or row.get("sequence") or 0
-            kpi_sequence = (
-                kpi_sequence_raw if isinstance(kpi_sequence_raw, int) else 0
-            )
+            kpi_description = row.get("label") or ""
+            style_str = row.get("style") or ""
+            is_subtotal = "font-weight: bold" in style_str
 
-            # Detect subtotal/total rows via style hint when available
-            style = row.get("style") or {}
-            is_subtotal = False
-            if isinstance(style, dict):
-                is_subtotal = style.get("font_weight") == "bold"
-
-            cols = row.get("cols") or []
-            for col_idx, col in enumerate(cols):
-                if not isinstance(col, dict):
+            cells = row.get("cells") or []
+            for col_idx, cell in enumerate(cells):
+                if not isinstance(cell, dict):
                     continue
 
-                # Map column to a period: prefer header label match, fallback to index
-                col_label = (
-                    period_labels[col_idx]
-                    if col_idx < len(period_labels)
-                    else "col_{}".format(col_idx)
-                )
-                period = periods_by_name.get(col_label)
+                # Extract kpi_id and period_id from cell_id: '<kpi_id>##<period_id>#'
+                cell_id = cell.get("cell_id") or ""
+                kpi_name = kpi_description  # fallback
+                period = None
+                if cell_id and "##" in cell_id:
+                    parts = cell_id.split("##")
+                    try:
+                        kpi_id = int(parts[0])
+                        kpi_obj = kpi_by_id.get(kpi_id)
+                        if kpi_obj:
+                            kpi_name = kpi_obj.name
+                    except (ValueError, IndexError):
+                        pass
+                    try:
+                        period_id_str = parts[1].rstrip("#")
+                        if period_id_str:
+                            period = periods_by_id.get(int(period_id_str))
+                    except (ValueError, IndexError):
+                        pass
+
+                # Fallback: match period by column index
                 if not period and col_idx < len(ordered_periods):
                     period = ordered_periods[col_idx]
 
-                value = self._coerce_value(col.get("val"))
-                value_str = col.get("val_r") or col.get("val_c") or ""
+                if not period:
+                    _logger.debug(
+                        "MIS snapshot: no period for cell_id=%s, skipping.", cell_id
+                    )
+                    continue
+
+                value = self._coerce_value(cell.get("val"))
+                value_str = cell.get("val_r") or ""
                 if not value_str:
                     value_str = "{:.2f}".format(value)
+                # Clean non-breaking spaces from formatted values
+                value_str = value_str.replace("\xa0", " ").strip()
 
                 records_to_create.append(
                     {
                         "instance_id": instance.id,
-                        "kpi_name": str(kpi_name),
+                        "kpi_name": kpi_name or kpi_description or "kpi_{}".format(seq_idx),
                         "kpi_description": kpi_description,
-                        "kpi_sequence": kpi_sequence,
+                        "kpi_sequence": seq_idx,
                         "is_subtotal": is_subtotal,
-                        "period_id": period.id if period else False,
-                        "period_name": period.name if period else col_label,
-                        "period_date_from": (
-                            period.date_from if period else instance.date_from
-                        ),
-                        "period_date_to": (
-                            period.date_to if period else instance.date_to
-                        ),
+                        "period_id": period.id,
+                        "period_name": period.name,
+                        "period_date_from": period.date_from,
+                        "period_date_to": period.date_to,
                         "value": value,
-                        "value_str": str(value_str),
+                        "value_str": value_str,
                         "company_id": company.id,
                         "computed_at": now,
                     }

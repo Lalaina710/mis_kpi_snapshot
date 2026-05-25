@@ -32,11 +32,14 @@ class MisReportInstance(models.Model):
 
         groups = Snapshot.read_group(
             domain=[("instance_id", "in", self.ids)],
-            fields=["instance_id", "computed_at:max"],
+            fields=["instance_id", "computed_at:max", "instance_id:count"],
             groupby=["instance_id"],
         )
         stats_by_inst = {
-            g["instance_id"][0]: (g["instance_id_count"], g.get("computed_at"))
+            g["instance_id"][0]: (
+                g.get("instance_id_count", 0),
+                g.get("computed_at"),
+            )
             for g in groups
         }
         for inst in self:

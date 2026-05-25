@@ -9,18 +9,19 @@
         <field name="inherit_id" ref="mis_builder.mis_report_instance_view_form"/>
         <field name="arch" type="xml">
 
-            <!-- Add a Snapshot Now button next to Compute / Preview header buttons -->
-            <xpath expr="//header" position="inside">
+            <!-- Add Snapshot Now button next to existing action buttons -->
+            <xpath expr="//div[@name='buttons']" position="inside">
                 <button name="action_snapshot_now"
                         type="object"
                         string="Snapshot Now"
-                        class="btn-secondary"
+                        class="btn"
+                        icon="fa-database"
                         groups="account.group_account_invoice"
                         help="Compute this instance and persist every KPI value to the snapshot table."/>
             </xpath>
 
-            <!-- Smart button: snapshot count -->
-            <xpath expr="//sheet" position="inside">
+            <!-- Snapshot status group appended inside sheet, after the title -->
+            <xpath expr="//div[@name='buttons']" position="after">
                 <div class="oe_button_box" name="snapshot_button_box">
                     <button name="action_view_snapshots"
                             type="object"
