@@ -4,6 +4,14 @@ All notable changes to this module are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions adhere to Odoo 18 semantic versioning `18.0.X.Y.Z`.
 
+## [18.0.1.0.1] - 2026-05-26
+
+### Fixed
+- `_compute_snapshot_stats` crashed list view `mis.report.instance` with
+  `TypeError: 'int' object is not subscriptable`. Odoo 18 `read_group`
+  returns `instance_id` as plain int (not tuple `(id, name)` like v15-17).
+  Replaced `g["instance_id"][0]` with `g["instance_id"]`.
+
 ## [18.0.1.0.0] - 2026-05-25
 
 ### Added

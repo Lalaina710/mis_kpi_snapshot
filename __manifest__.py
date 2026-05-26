@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl).
 {
     "name": "MIS KPI Snapshot",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Accounting/Reporting",
     "summary": "Materialize KPI computed by mis_builder into a SQL table queryable by Metabase / BI tools",
     "description": """

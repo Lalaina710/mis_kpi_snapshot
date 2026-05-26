@@ -36,7 +36,7 @@ class MisReportInstance(models.Model):
             groupby=["instance_id"],
         )
         stats_by_inst = {
-            g["instance_id"][0]: (
+            g["instance_id"]: (
                 g.get("instance_id_count", 0),
                 g.get("computed_at"),
             )
